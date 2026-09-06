@@ -23,123 +23,70 @@
     ctx.arcTo(size,size,size-r,size,r); ctx.lineTo(r,size);
     ctx.arcTo(0,size,0,size-r,r); ctx.lineTo(0,r);
     ctx.arcTo(0,0,r,0,r); ctx.closePath();
-    // Dark background with very subtle gradient
-    const bgGrad = ctx.createRadialGradient(size*0.35, size*0.25, 0, size*0.5, size*0.5, size*0.7);
-    bgGrad.addColorStop(0, '#141008');
-    bgGrad.addColorStop(1, '#080808');
+    // Deep dark background
+    const bgGrad = ctx.createLinearGradient(0,0,size,size);
+    bgGrad.addColorStop(0,'#0E0C04');
+    bgGrad.addColorStop(1,'#080808');
     ctx.fillStyle = bgGrad; ctx.fill();
 
-    // ── Work in a normalised 180×180 space ──────
+    // ── Lightning bolt in normalised 180×180 space
     const sc = size / 180;
     ctx.save();
     ctx.scale(sc, sc);
 
-    // Feather anchor: tip at top, base at bottom-center
-    // Slightly tilted — classic Apache plume angle
-    const tipX = 95, tipY = 18;
-    const baseX = 72, baseY = 162;
+    // Bolt shape: classic top-right-to-bottom-left diagonal slash
+    // Top half: upper-right area, pointing down-left
+    // Bottom half: lower-left, pointing further down
+    const boltPath = [
+      [104, 14],   // top-right corner
+      [ 72, 82],   // mid-left inner top
+      [ 96, 82],   // mid inner notch right
+      [ 68,166],   // bottom tip
+      [108, 96],   // mid-right inner bottom
+      [ 84, 96],   // mid inner notch left
+      [104, 14],   // close
+    ];
 
-    // ── Feather filled vane (left side = wider) ──
-    // Build the full silhouette as a single filled path
-    // Right edge of vane (narrow side)
-    const rVane = [];
-    // Left edge of vane (wide, flowing side)
-    const lVane = [];
+    // Outer glow
+    ctx.shadowColor = 'rgba(245,197,24,0.8)';
+    ctx.shadowBlur = 18 * sc;
 
-    const steps = 24;
-    for (let i = 0; i <= steps; i++) {
-      const t = i / steps;
-      // Quill centre-line (bezier)
-      const mx = bezierPoint(tipX, tipX+4, baseX+8, baseX, t);
-      const my = bezierPoint(tipY, tipY*2+40, baseY-50, baseY, t);
-      // Feather width: zero at tip, widens to max at ~65% then narrows slightly
-      const wProfile = Math.sin(Math.PI * Math.pow(t, 0.6));
-      const wLeft  = 38 * wProfile;   // wider left vane (Apache plume bulge)
-      const wRight = 18 * wProfile;
-      // Perpendicular direction to the quill
-      const dx = bezierTangent(tipX, tipX+4, baseX+8, baseX, t);
-      const dy = bezierTangent(tipY, tipY*2+40, baseY-50, baseY, t);
-      const len = Math.sqrt(dx*dx+dy*dy)||1;
-      const nx = -dy/len, ny = dx/len; // normal
-      lVane.push([mx + nx*wLeft,  my + ny*wLeft]);
-      rVane.push([mx - nx*wRight, my - ny*wRight]);
-    }
+    // Fill gradient: bright white-yellow at top, deep gold at bottom
+    const bGrad = ctx.createLinearGradient(68, 14, 108, 166);
+    bGrad.addColorStop(0,   '#FFFFFF');
+    bGrad.addColorStop(0.18,'#FFF5B0');
+    bGrad.addColorStop(0.5, '#F5C518');
+    bGrad.addColorStop(1,   '#C87A00');
 
-    // Fill the vane with gold gradient
-    const vaneGrad = ctx.createLinearGradient(tipX, tipY, baseX, baseY);
-    vaneGrad.addColorStop(0,   '#FFF0A0');
-    vaneGrad.addColorStop(0.25,'#F5C518');
-    vaneGrad.addColorStop(0.7, '#E8A800');
-    vaneGrad.addColorStop(1,   '#C87800');
     ctx.beginPath();
-    ctx.moveTo(lVane[0][0], lVane[0][1]);
-    for (let i=1;i<=steps;i++) ctx.lineTo(lVane[i][0], lVane[i][1]);
-    for (let i=steps;i>=0;i--) ctx.lineTo(rVane[i][0], rVane[i][1]);
+    ctx.moveTo(boltPath[0][0], boltPath[0][1]);
+    for(let i=1;i<boltPath.length;i++) ctx.lineTo(boltPath[i][0], boltPath[i][1]);
     ctx.closePath();
-    ctx.fillStyle = vaneGrad; ctx.fill();
+    ctx.fillStyle = bGrad;
+    ctx.fill();
 
-    // ── Barb lines (texture detail) ─────────────
-    ctx.lineCap = 'round';
-    const numBarbs = 18;
-    for (let i = 2; i < numBarbs; i++) {
-      const t = i / (numBarbs - 1);
-      const mx = bezierPoint(tipX, tipX+4, baseX+8, baseX, t);
-      const my = bezierPoint(tipY, tipY*2+40, baseY-50, baseY, t);
-      const wProfile = Math.sin(Math.PI * Math.pow(t, 0.6));
-      const wLeft  = 37 * wProfile;
-      const wRight = 17 * wProfile;
-      const dx = bezierTangent(tipX, tipX+4, baseX+8, baseX, t);
-      const dy = bezierTangent(tipY, tipY*2+40, baseY-50, baseY, t);
-      const len = Math.sqrt(dx*dx+dy*dy)||1;
-      const nx = -dy/len, ny = dx/len;
-      const alpha = 0.18 + 0.12*t;
-      ctx.strokeStyle = `rgba(120,70,0,${alpha})`;
-      ctx.lineWidth = 0.7;
-      ctx.beginPath();
-      ctx.moveTo(mx - nx*wRight, my - ny*wRight);
-      ctx.lineTo(mx + nx*wLeft,  my + ny*wLeft);
-      ctx.stroke();
-    }
-
-    // ── Quill (rachis) ────────────────────────────
+    // Inner highlight — thin bright streak on left edge of bolt
+    ctx.shadowBlur = 0;
+    const hGrad = ctx.createLinearGradient(72, 20, 76, 90);
+    hGrad.addColorStop(0,'rgba(255,255,255,0.85)');
+    hGrad.addColorStop(1,'rgba(255,255,255,0)');
     ctx.beginPath();
-    ctx.moveTo(tipX, tipY);
-    ctx.bezierCurveTo(tipX+4, tipY*2+40, baseX+8, baseY-50, baseX, baseY);
-    const quillGrad = ctx.createLinearGradient(tipX, tipY, baseX, baseY);
-    quillGrad.addColorStop(0,   '#FFFFFF');
-    quillGrad.addColorStop(0.3, '#FFF4C2');
-    quillGrad.addColorStop(1,   '#D4A017');
-    ctx.strokeStyle = quillGrad;
-    ctx.lineWidth = 2.2;
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    ctx.moveTo(100,18); ctx.lineTo(74,78); ctx.lineTo(80,78); ctx.lineTo(106,20);
+    ctx.closePath();
+    ctx.fillStyle = hGrad;
+    ctx.fill();
 
-    // ── Tip highlight ─────────────────────────────
-    const tipGlow = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, 8);
-    tipGlow.addColorStop(0, 'rgba(255,255,220,0.9)');
-    tipGlow.addColorStop(1, 'rgba(255,255,220,0)');
-    ctx.beginPath(); ctx.arc(tipX, tipY, 8, 0, Math.PI*2);
-    ctx.fillStyle = tipGlow; ctx.fill();
-
-    // ── Calamus (quill base nub) ──────────────────
+    // Subtle outline to crisp up edges
     ctx.beginPath();
-    ctx.ellipse(baseX, baseY, 3.5, 7, -0.3, 0, Math.PI*2);
-    ctx.fillStyle = '#C87800'; ctx.fill();
-    ctx.strokeStyle = '#FFF0A0'; ctx.lineWidth = 1;
+    ctx.moveTo(boltPath[0][0], boltPath[0][1]);
+    for(let i=1;i<boltPath.length;i++) ctx.lineTo(boltPath[i][0], boltPath[i][1]);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,220,60,0.35)';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
     ctx.restore();
     return c.toDataURL('image/png');
-  }
-
-  // Cubic bezier helpers
-  function bezierPoint(p0,p1,p2,p3,t){
-    const mt=1-t;
-    return mt*mt*mt*p0 + 3*mt*mt*t*p1 + 3*mt*t*t*p2 + t*t*t*p3;
-  }
-  function bezierTangent(p0,p1,p2,p3,t){
-    const mt=1-t;
-    return 3*(mt*mt*(p1-p0) + 2*mt*t*(p2-p1) + t*t*(p3-p2));
   }
 
   window.addEventListener('DOMContentLoaded',function(){
@@ -195,8 +142,7 @@ button,input,textarea,select{font-family:inherit;}
 @keyframes fadeView{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
 
 /* MOTIVATION CARD */
-.motiv-card{background:linear-gradient(135deg,rgba(245,197,24,0.12),rgba(245,197,24,0.03));border:1px solid rgba(245,197,24,0.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;position:relative;overflow:hidden;}
-.motiv-card::before{content:'';position:absolute;top:0;right:0;width:60px;height:60px;background:radial-gradient(circle,rgba(245,197,24,0.15),transparent);border-radius:50%;}
+.motiv-card{background:linear-gradient(135deg,rgba(245,197,24,0.12),rgba(245,197,24,0.03));border:1px solid rgba(245,197,24,0.25);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;}
 .motiv-quote{font-size:13px;font-weight:600;line-height:1.5;color:var(--text);font-style:italic;}
 .motiv-author{font-size:10px;color:var(--gold);font-weight:700;margin-top:6px;letter-spacing:0.5px;}
 
@@ -415,12 +361,12 @@ button,input,textarea,select{font-family:inherit;}
 <header class="header">
   <div class="hdr-logo">
     <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-      <polygon points="20,4 32,18 25,18 25,36 15,36 15,18 8,18" fill="#F5C518"/>
+      <polygon points="24,3 16,21 22,21 15,37 26,17 20,17" fill="#F5C518"/>
     </svg>
   </div>
   <div class="hdr-title">
-    <h1>APH Peak Holidays</h1>
-    <p>6 Jul → 21 Août 2026</p>
+    <h1>APH Saison 9 — Rentrée</h1>
+    <p>7 Sep → 23 Oct 2026</p>
   </div>
   <div class="hdr-actions">
     <button class="hdr-import-btn" onclick="openImportOverlay()" title="Importer">📥</button>
@@ -477,8 +423,8 @@ button,input,textarea,select{font-family:inherit;}
     </div>
     <div class="section-label">Cycle</div>
     <div class="glass-card">
-      <div class="list-row"><span class="list-lbl">📅 Début</span><span class="list-val">6 Jul 2026</span></div>
-      <div class="list-row"><span class="list-lbl">📅 Fin</span><span class="list-val">21 Août 2026</span></div>
+      <div class="list-row"><span class="list-lbl">📅 Début</span><span class="list-val">7 Sep 2026</span></div>
+      <div class="list-row"><span class="list-lbl">📅 Fin</span><span class="list-val">23 Oct 2026</span></div>
       <div class="list-row"><span class="list-lbl">📆 Durée</span><span class="list-val" id="totalDaysSetting">—</span></div>
     </div>
     <div class="section-label">Règles de scoring</div>
@@ -531,8 +477,9 @@ button,input,textarea,select{font-family:inherit;}
 /* ═══════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════ */
-const START = new Date(2026,6,6);   // 6 Juillet 2026
-const END   = new Date(2026,7,21);  // 21 Août 2026
+const START = new Date(2026,8,7);   // 7 Septembre 2026
+const END   = new Date(2026,9,23);  // 23 Octobre 2026
+const COMPLIANCE_TARGET = 90; // objectif %
 
 const DAYS_FR   = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
@@ -595,9 +542,9 @@ function getDailyQuote() {
 
 /* ── Session exercises ─────────────────────── */
 const SESSION_EXOS = {
-  APH1: ['Squat','Fentes avant','Landmine Extension','Romanian Deadlift (RDL)','Biceps','Military Press'],
-  APH2: ['Développé Couché','DC incliné haltères','Tirage TRX','Tirage Machine','Copenhagen Plank','Triceps','Ischio-jambiers machine'],
-  APH3: ['Tractions','Tirage dos large poulie','Pompes','Pompes sur box','Banc à lombaires','Biceps','Triceps'],
+  APH1: ['Soulevé de terre (SDT)','TRX Row','Single Leg Deadlift G','Single Leg Deadlift D','Jefferson Curl','Finisher'],
+  APH2: ['Dumbbell Push-Up','Tirage poulie','Kettlebell Swing','Pallof Press','Finisher'],
+  APH3: ['Tractions','Développé incliné machine','Gorilla Row','Fentes','Landmine Rotation','Finisher'],
   APHHOME: [],
 };
 
@@ -606,25 +553,60 @@ const CARDIO_SESSIONS = ['APH2','APH3'];
 
 /* ── Séances data ───────────────────────────── */
 const SEANCES_DATA = {
-  APH1:{title:'APH1 – Peak Holidays',duration:'80 min',subtitle:'Squat · Fentes · Landmine',sections:[
-    {title:'Activation',exercises:[{name:'Crab Walk',detail:'2 × 10'},{name:'Chute pointes de pieds',detail:'2 × 8'},{name:'Wall Chair',detail:'2 × 1 min'}]},
-    {title:'Séance',exercises:[{name:'Squat',detail:'4 × 8'},{name:'Fentes avant',detail:'3 × 12'},{name:'Landmine Extension',detail:'3 × 12'}]},
-    {title:'Accessoires',exercises:[{name:'Romanian Deadlift (RDL)',detail:'2 × 10'}]},
-    {title:'Finishers',exercises:[{name:'Biceps',detail:''},{name:'Military Press',detail:''}]},
+  APH1:{title:'APH1 – Rentrée S9',duration:'~60 min',subtitle:'SDT · TRX Row · Single Leg DL',sections:[
+    {title:'Activation — 2 tours',exercises:[
+      {name:'Superman statique bras tendus',detail:'40 sec'},
+      {name:'Fentes arrière → genou monté',detail:'8 reps G/D'},
+      {name:'Band Standing Hip Abduction',detail:'8 reps G/D'},
+    ]},
+    {title:'Explosivité — 2 tours',exercises:[
+      {name:'Chute pointe des pieds',detail:'5 reps'},
+    ]},
+    {title:'Main',exercises:[
+      {name:'Soulevé de terre (SDT)',detail:'4 × 5'},
+      {name:'TRX Row',detail:'3 × 10'},
+      {name:'Single Leg Deadlift',detail:'3 × 8 G/D'},
+    ]},
+    {title:'Accessoire — 2 tours',exercises:[
+      {name:'Jefferson Curl',detail:'KB 12 kg, tempo lent — 8 reps'},
+    ]},
+    {title:'Finisher',exercises:[{name:'Finisher libre',detail:''}]},
   ]},
-  APH2:{title:'APH2 – Peak Holidays',duration:'60 min + cardio',subtitle:'DC · TRX · Cardio 20min',sections:[
-    {title:'Activation',exercises:[{name:'Anti-rotation élastique',detail:'2 × 10'},{name:'Indian Push-Up',detail:'2 × 10'},{name:'Rotation externe épaule',detail:'2 × 6'}]},
-    {title:'Séance',exercises:[{name:'Développé Couché',detail:'4 × 10'},{name:'DC incliné haltères',detail:'4 × 12'},{name:'Superset – Tirage TRX',detail:'3 × 15 + Tirage Machine max rep'}]},
-    {title:'Accessoires',exercises:[{name:'Copenhagen Plank',detail:'2 × 20 s / côté'}]},
-    {title:'Finishers',exercises:[{name:'Triceps',detail:''},{name:'Ischio-jambiers machine',detail:''}]},
-    {title:'Cardio (optionnel)',exercises:[{name:'Cardio',detail:'20 minutes'}]},
+  APH2:{title:'APH2 – Rentrée S9',duration:'~60 min',subtitle:'DB Push-Up · Tirage · KB Swing',sections:[
+    {title:'Activation — 2 tours',exercises:[
+      {name:'Gainage planche bras tendus',detail:'45 sec'},
+      {name:'Indian Push-Up',detail:'8 reps'},
+      {name:'Ab Wheel',detail:'10 reps'},
+    ]},
+    {title:'Explosivité — 2 tours',exercises:[
+      {name:'Pompes sautées',detail:'5 reps'},
+    ]},
+    {title:'Main',exercises:[
+      {name:'Dumbbell Push-Up',detail:'4 × 6'},
+      {name:'Tirage poulie',detail:'3 × 12'},
+      {name:'Kettlebell Swing',detail:'3 × 20'},
+    ]},
+    {title:'Accessoire',exercises:[
+      {name:'Pallof Press',detail:'2 × 12 chaque côté'},
+    ]},
+    {title:'Finisher',exercises:[{name:'Finisher libre',detail:''}]},
   ]},
-  APH3:{title:'APH3 – Peak Holidays',duration:'60 min + cardio',subtitle:'Tractions · Dos · Cardio 20min',sections:[
-    {title:'Activation',exercises:[{name:'Mountain Climbers',detail:'2 × 30'},{name:'Scapula Pull-Ups',detail:'2 × 10'},{name:'Roulette abdos',detail:'2 × 10'}]},
-    {title:'Séance',exercises:[{name:'Tractions',detail:'4 × 10'},{name:'Tirage dos large poulie',detail:'4 × 10'},{name:'Superset – Pompes',detail:'4 × 20 + Pompes sur box 4 × max'}]},
-    {title:'Accessoires',exercises:[{name:'Banc à lombaires',detail:'2 × 15'}]},
-    {title:'Finishers',exercises:[{name:'Biceps',detail:''},{name:'Triceps',detail:''}]},
-    {title:'Cardio (optionnel)',exercises:[{name:'Cardio',detail:'20 minutes'}]},
+  APH3:{title:'APH3 – Rentrée S9',duration:'~60 min',subtitle:'Tractions · Gorilla Row · Fentes',sections:[
+    {title:'Activation — 2 tours',exercises:[
+      {name:'Scapula Pull-Up',detail:'8 reps'},
+      {name:'YWT',detail:'8 reps'},
+      {name:'Banc à lombaires',detail:''},
+    ]},
+    {title:'Main',exercises:[
+      {name:'Tractions',detail:'4 × 8'},
+      {name:'Développé incliné machine',detail:'4 × 6'},
+      {name:'Gorilla Row',detail:'3 × 8 G/D'},
+      {name:'Fentes',detail:'2 × 15 G/D'},
+    ]},
+    {title:'Accessoire — 2 tours',exercises:[
+      {name:'Landmine Rotation',detail:'8 reps G/D'},
+    ]},
+    {title:'Finisher',exercises:[{name:'Finisher libre',detail:''}]},
   ]},
 };
 
@@ -837,7 +819,7 @@ function renderToday(){
     html+=`<div class="gold-card" style="text-align:center;padding:20px 16px;margin-bottom:14px">
       <div style="font-size:36px;margin-bottom:6px">🔥</div>
       <div style="font-weight:900;font-size:20px;color:var(--gold)">J-${daysUntil}</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Le cycle commence le 6 juillet 2026</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">Le cycle commence le 7 septembre 2026</div>
     </div>`;
     html+=`<div class="section-label">Prépare-toi — Premier jour du cycle</div>`;
     html+=renderDayCard(START);
@@ -846,7 +828,7 @@ function renderToday(){
     html+=`<div class="gold-card" style="text-align:center;padding:20px 16px">
       <div style="font-size:36px;margin-bottom:6px">🏆</div>
       <div style="font-weight:900;font-size:18px;color:var(--gold)">Cycle terminé</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">APH Peak Holidays · 6 Jul → 21 Août 2026</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">APH Saison 9 — 7 Sep → 23 Oct 2026</div>
     </div>`;
     html+=renderDayCard(END);
   }
@@ -900,7 +882,7 @@ function renderWeek(){
       msg=`<div style="text-align:center;padding:32px 20px">
         <div style="font-size:40px;margin-bottom:10px">🔥</div>
         <div style="font-size:22px;font-weight:900;color:var(--gold)">J-${daysUntil}</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Le cycle démarre le 6 juillet 2026</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-top:6px">Le cycle démarre le 7 septembre 2026</div>
         <div style="font-size:11px;color:var(--text-muted);margin-top:4px">Navigue → pour voir les premières semaines</div>
       </div>`;
     } else {
@@ -1144,13 +1126,28 @@ function renderProgress(){
     e.sets.forEach(s=>{exoStats[e.name].totalSets++;const w=parseFloat(s.weight);if(!isNaN(w)&&w>exoStats[e.name].maxWeight)exoStats[e.name].maxWeight=w;});
   }));
 
+  const targetPct = COMPLIANCE_TARGET;
+  const targetOff = circ*(1-targetPct/100);
+  const onTrack = pct >= targetPct;
+  const gapToTarget = Math.max(0, targetPct - pct);
+
   c.innerHTML=`
     <div class="gold-card">
-      <div class="card-title">Compliance Globale</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0">Compliance Globale</div>
+        <div style="font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;background:${onTrack?'rgba(52,199,89,0.2)':'rgba(255,197,24,0.15)'};color:${onTrack?'var(--green)':'var(--gold)'};border:1px solid ${onTrack?'rgba(52,199,89,0.4)':'rgba(245,197,24,0.3)'}">
+          Objectif ${targetPct}% ${onTrack?'✓ Atteint':'→ -'+gapToTarget+'%'}
+        </div>
+      </div>
       <div style="display:flex;align-items:center;gap:16px">
         <div class="ring-wrap">
           <svg viewBox="0 0 120 120" width="120" height="120">
+            <!-- Track -->
             <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="9"/>
+            <!-- Target marker at 90% -->
+            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="9"
+              stroke-dasharray="2 ${(circ-2).toFixed(1)}" stroke-dashoffset="${targetOff.toFixed(1)}" stroke-linecap="butt"/>
+            <!-- Progress arc -->
             <circle cx="60" cy="60" r="52" fill="none" stroke="url(#gG)" stroke-width="9"
               stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" stroke-linecap="round"/>
             <defs><linearGradient id="gG" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1162,7 +1159,16 @@ function renderProgress(){
         <div style="flex:1">
           <div style="font-size:22px;font-weight:900;color:var(--gold)">${elapsed}<span style="font-size:13px;color:var(--text-muted);font-weight:400"> / ${totalDays} j</span></div>
           <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Jours écoulés</div>
-          ${superDays>0?`<div style="font-size:11px;color:var(--green);font-weight:700;margin-top:4px">⚡ ${superDays} jour${superDays>1?'s':''} à 120%</div>`:''}
+          <div style="margin-top:10px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);margin-bottom:4px">
+              <span>Objectif ${targetPct}%</span><span style="color:${onTrack?'var(--green)':'var(--gold)'}">${pct}%</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.07);overflow:hidden;position:relative">
+              <div style="position:absolute;top:0;left:${targetPct}%;width:2px;height:100%;background:rgba(255,255,255,0.3);transform:translateX(-50%)"></div>
+              <div style="height:100%;border-radius:3px;width:${Math.min(pct,100)}%;background:${onTrack?'linear-gradient(90deg,var(--green),#5EFF8A)':'linear-gradient(90deg,var(--gold),var(--gold-light))'};transition:width 0.4s"></div>
+            </div>
+          </div>
+          ${superDays>0?`<div style="font-size:11px;color:var(--green);font-weight:700;margin-top:8px">⚡ ${superDays} jour${superDays>1?'s':''} à 120%</div>`:''}
         </div>
       </div>
     </div>
@@ -1294,9 +1300,9 @@ function buildCycleTimeline(dates,today,elapsed,totalDays,cyclePct){
       <div class="timeline-cursor" style="left:${Math.min(Math.max(cyclePct,1),99)}%"></div>
     </div>
     <div class="timeline-labels">
-      <span class="timeline-label">6 Jul</span>
+      <span class="timeline-label">7 Sep</span>
       <span class="timeline-label" style="color:var(--gold)">Aujourd'hui</span>
-      <span class="timeline-label">21 Août</span>
+      <span class="timeline-label">23 Oct</span>
     </div>
     <div class="timeline-weeks">${weeks}</div>
   </div>`;
@@ -1399,7 +1405,7 @@ function readImportFile(file){
 function exportData(){
   const b=new Blob([JSON.stringify({version:4,data:DATA,trainings:TRAININGS,exported:new Date().toISOString()},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);
-  a.download='aph_peak_holidays_'+ds(new Date())+'.json';a.click();showToast('📤 Export réussi !');
+  a.download='aph_saison9_rentree_'+ds(new Date())+'.json';a.click();showToast('📤 Export réussi !');
 }
 function resetData(){
   if(!confirm('⚠️ Réinitialiser TOUTES les données ? Irréversible.'))return;
