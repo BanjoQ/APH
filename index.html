@@ -164,6 +164,8 @@ button, input, textarea, select { font-family: inherit; }
   height: 54px;
   box-sizing: content-box;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   transform: translateZ(0);
   will-change: transform;
 }
@@ -761,6 +763,11 @@ const MONTHS_FR = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct'
 // Fields for daily check
 /* SVG icons — filaire, stroke="currentColor", viewBox 0 0 24 24 */
 const ICONS = {
+  /* APH1 Lower Body — silhouette squat (person fléchi) */
+  squat:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="4" r="1.8"/><path d="M12 6v4"/><path d="M9 10l-3 4h4l2 4 2-4h4l-3-4"/><line x1="6" y1="14" x2="4" y2="20"/><line x1="18" y1="14" x2="20" y2="20"/></svg>`,
+  /* APH2 Pull — tractions (barre + bras tendus vers le haut) */
+  pullup:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="3" x2="21" y2="3"/><line x1="8" y1="3" x2="10" y2="7"/><line x1="16" y1="3" x2="14" y2="7"/><circle cx="12" cy="9" r="1.8"/><path d="M12 11v5"/><path d="M10 16l-2 5"/><path d="M14 16l2 5"/></svg>`,
+  /* APH3 Push — développé couché (personne allongée, barre au-dessus) */
   dumbbell:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="9" x2="6" y2="15"/><line x1="18" y1="9" x2="18" y2="15"/><line x1="3" y1="10" x2="3" y2="14"/><line x1="21" y1="10" x2="21" y2="14"/></svg>`,
   flame:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 5-5 7-5 12a5 5 0 0 0 10 0c0-5-5-7-5-12z"/><path d="M12 14c0 2-1.5 3-1.5 4.5a1.5 1.5 0 0 0 3 0C13.5 17 12 16 12 14z"/></svg>`,
   martial: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><path d="M9 21l3-4 3 4"/><path d="M6 12l3-1"/><path d="M18 12l-3-1"/></svg>`,
@@ -771,9 +778,9 @@ const ICONS = {
   pill:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 2.5a5 5 0 0 0-7 7l11 11a5 5 0 0 0 7-7l-11-11z"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
 };
 const CHECK_FIELDS = [
-  { key:'aph1',  label:'APH1', icon:ICONS.dumbbell, group:'session' },
-  { key:'aph2',  label:'APH2', icon:ICONS.dumbbell, group:'session' },
-  { key:'aph3',  label:'APH3', icon:ICONS.flame,    group:'session' },
+  { key:'aph1',  label:'APH1', icon:ICONS.squat,   group:'session' },
+  { key:'aph2',  label:'APH2', icon:ICONS.pullup,  group:'session' },
+  { key:'aph3',  label:'APH3', icon:ICONS.dumbbell,group:'session' },
   { key:'jjb',   label:'JJB',  icon:ICONS.martial,  group:'session' },
   { key:'rest',  label:'Repos',icon:ICONS.leaf,     group:'session' },
   { key:'water', label:'Eau',  icon:ICONS.drop,     group:'habit' },
